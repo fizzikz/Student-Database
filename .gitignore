@@ -1,12 +1,314 @@
 *.class
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
 
-# Package Files #
-*.jar
-*.war
-*.ear
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+        
+
+public class StudentDatabase{                         
+    private HashTable StudentTable=new HashTable();             //creates a new hash table to store the student information
+    private int[][] marks= new int[101][101];                   //creates a 2D array of exam 1 marks and exam 2 marks using integer values of marks from 0 to 100 percent. Stores the number of students that have a particular combination of exam marks.
+    public int numStudents;                                     //keeps track of number of students in the database
+   
+    public StudentDatabase(){
+        for (int i=0; i<StudentTable.getSize(); i++){
+          Student Nstudent= new Student(); 
+            StudentTable.add(Nstudent);
+        }
+        for (int i=0; i<101; i++){
+            for(int j=0; j<101; j++){
+                marks[i][j]=0;
+                }
+        }
+    } 
+    
+    public boolean add(String macid, int exam1, int exam2){             //add method that adds the student and their exam marks
+        Student x=StudentTable.find(macid);                     //finds/checks weather the student already exists in the database, if student does exist, this method returns the student object
+        if (x!=null){                           // if the student was already in the list
+            marks[x.getexam1()][x.getexam2()]--;       // go to the index of current exam mark combination and subtract one from it.
+            marks[exam1][exam2]++;   // add one to the new exam mark combination
+            x.setExam1(exam1);  // change the students exam marks to new exam marks
+            x.setExam2(exam2);
+            return false;  //returns false since the student already existed in the database
+        }
+        else {
+            marks[exam1][exam2]++;   //if the student doesnt exist in the database, increment the value at the combination of the two exam marks
+            x= new Student(macid, exam1, exam2);        //create a new student object using the given values
+            numStudents++;                      // increment the number of students in the database
+            if (numStudents>StudentTable.getSize()){            //check if the number of students excedes the size of the table
+                this.rehash();                          // if it does then rehash the table
+            }
+            return StudentTable.add(x);             //add the new student in the table using the add method in the HashTable and returns true.
+        }
+       
+    }
+    public boolean remove(String macid) {           //removes a student from the database
+       Student x= StudentTable.find(macid);             //searches for the student in the database using the macid
+        if (x!=null){                           //if the student exists
+            marks[x.getexam1()][x.getexam2()]--;        //substracts one from the exam mark combination
+            numStudents--;                  //substracts one from the number of students
+            return StudentTable.remove(macid);      //removes the student using the remove method in HashTable class and returns true
+        }
+        else {
+            return false;               //otherwise if the student doesnt exist returnfalse
+        }
+    }
+    public int getExam1(String macid) {     //returns the value of exam 1 mark for the specified student ID
+        Student x= StudentTable.find(macid);            //finds the student in the database
+             return x.getexam1();               //gets their exam mark
+         
+    }
+    public int getExam2(String macid) {
+        Student x= StudentTable.find(macid);
+
+             return x.getexam2();
+         
+    }
+    public int query(int exam1Low, int exam1High, int exam2Low, int exam2High) {        //Returns the number of students whose exam marks are in the specified range.
+        int total=0;                                //initialies the total
+   
+        for (int i=(exam1Low); i<(exam1High+1);i++){                //increments from exam1low index to exam1High index +1 so that it includes the exam1high index as well
+           
+            for (int j=(exam2Low); j<(exam2High+1);j++) {           //increments from exa2low index to exam2High index +1 so that it includes the exam1high index as well
+               
+                total=total + marks[i][j];                   //sums the value of all of the indexes that lie in the specified range.
+                
+            }
+        }
+       
+        return total;               //returns the total
+    }
+    public void rehash(){           //rehash method for the student database
+        StudentTable= StudentTable.Rehash();            //rehashes the curent hashtable and returns the rehashed table and assigns it back to this hashtable
+    }
+    public int getTableSize(){              //returns the size of the hash table
+        return StudentTable.getSize();
+    }
+    public double getNumStudents(){            //returns the number of students stored in the database
+        return (numStudents/1.0);
+    }
+   
+ 
+    public static void main(String[] args) {
+        // TODO code application logic here
+//            long startTime = System.currentTimeMillis();                      //used to measure and evaluate the speed of the execution
+		
+                StudentDatabase sdb = new StudentDatabase();                
+		
+                for (int i = 0; i < 10000; i++) {
+			sdb.add("ID_" + i, i / 100, i % 100);
+		}
+           
+                System.out.println(sdb.query(60, 100, 60, 100));        //Prints out 1600
+		System.out.println(sdb.query(0, 59, 0, 59));            //Prints out 3600
+//            System.out.println("number of students in database = "+sdb.getNumStudents());   
+//            System.out.println("size of the hash table is = "+sdb.getTableSize());
+//            System.out.println("Load factor is "+(sdb.getNumStudents()/sdb.getTableSize()));
+            
+            
+	
+                for (int i = 0; i < 10000; i++) {
+			if (sdb.getExam1("ID_" + i) != i / 100) {
+				System.out.println("Error: getExam1(\"ID_" + i + "\")");
+			}
+			if (sdb.getExam2("ID_" + i) != i % 100) {
+				System.out.println("Error: getExam2(\"ID_" + i + "\")");
+			}
+		}
+		for (int i = 0; i < 10000; i +=2) {
+			sdb.remove("ID_" + i);
+		}
+
+            
+//                        System.out.println("number of students in database = "+sdb.getNumStudents());    
+//            System.out.println("size of the hash table is = "+sdb.getTableSize());
+//            System.out.println("Load factor is "+(sdb.getNumStudents()/sdb.getTableSize()));
+
+		System.out.println(sdb.query(60, 100, 60, 100));        //prints out 800
+		System.out.println(sdb.query(0, 59, 0, 59));            //prints out 1800
+		for (int i = 0; i < 1000000; i++) {
+			sdb.add("ID_" + i, (i % 10000) / 100, (i % 10000) % 100);
+		}
+           
+		System.out.println(sdb.query(60, 100, 60, 100));        //prints out 160000
+		System.out.println(sdb.query(0, 59, 0, 59));
+           
+//            System.out.println("number of students in database = "+sdb.getNumStudents());    
+//            System.out.println("size of the hash table is = "+sdb.getTableSize());
+//            System.out.println("Load factor is "+(sdb.getNumStudents()/sdb.getTableSize()));
+
+		for (int i = 0; i < 100; i++) {
+			for (int j = 0; j < 100; j++) {
+				if (sdb.query(i, i, j, j) != 100) {
+					System.out.println("Error: query("+i+","+i+","+j+","+j+")");
+					
+				}
+			}
+		}
+	
+		for (int i = 0; i < 1000000; i++) {
+			sdb.remove("ID_" + i);
+		}
+//            long stopTime= System.currentTimeMillis();             
+//	    long elapsedTime = (stopTime4 - startTime);              //total time it took to run the code
+//            System.out.println(elapsedTime+" ms");
+		System.out.println(sdb.query(60, 100, 60, 100));        //prints out 0
+		System.out.println(sdb.query(0, 59, 0, 59));            //prints out 0
+            
+           
+	}
+}
+
+class Student{                         // Student class that stores a students mac ID and two exam marks
+
+    private String macid;
+    private int exam1;
+    private int exam2;
+    public Student(){                   // Constructor that creats an empty student object with an empty Mac Id
+        macid=" ";
+        exam1=-1;
+        exam2=-1;
+    }
+    public Student(String MacId, int Exam1, int Exam2){            //Contructor that creates a student object using the string ID and two exam marks
+        this.macid=MacId;
+        this.exam1=Exam1;
+        this.exam2=Exam2;
+
+    }
+   public int getexam1(){                               //method for accessing exam 1 mark for this student
+       return exam1;
+   }
+   public int getexam2(){                   //method for accessing exam 2 marks for this student
+       return exam2;
+   }
+   public String getMacid(){            //method for accessing this students Mac ID
+       return macid;
+   }
+   public void setExam1(int x){         //method for setting exam marks for this student
+       this.exam1=x;
+       
+   }
+   public void setExam2(int x){
+       this.exam2=x;
+
+   }
+   public void setMacid(String x){          //method for setting the mac ID for this student
+       this.macid=x;
+   }
+ 
+}
+class HashTable{                            //HashTable class used to store the student objects in a table
+        private int numRehash=0;            // initializes how many times the table has been rehashed
+	
+        private int size =1000;               //initializes the size of the database to 10000
+	
+        private HashTable.Node[] LinkedList;        //initializes linked nodes for each bucket in the table
+       
+	public HashTable(){                         // constructs an array of nodes using the initial size of 1000
+		LinkedList = new HashTable.Node[size];
+
+	}
+        public HashTable(int NewSize){              // constructs an array of nodes using a specified size
+		LinkedList = new HashTable.Node[NewSize];
+                this.setSize(NewSize);
+
+	}
+        public boolean add(Student x){                  // an add method, adds students to the appropriate bucket and connects it to the linked list at that bucket
+		
+                int Index = HashIndex(x.getMacid());           // calls HashIndex Method using the MacId string to get the approriate index to add the student		
+		
+                LinkedList[Index] = new HashTable.Node(x,LinkedList[Index]);            //if the student wasnt in that bucket already, creates a new node for this student
+		
+                return true;                                        // returns true since the new student was added to the database
+        }
+        public Student find(String MacId){                      // finds the node where the Student is being stored, and returns the student object
+		int bucket = HashIndex(MacId);                 
+		for(HashTable.Node p = LinkedList[bucket];p!=null;p = p.next){
+			if(p.student.getMacid().equals(MacId)){                         // if the student at this node is the student being searched for returns the student
+				return p.student;
+			}
+		}
+		return null;
+	}
+	public boolean remove(String MacId){                        // Removes the student from the database using the MacID
+		int Index = HashIndex(MacId);              //finds the index where the student is being stored
+		HashTable.Node head = LinkedList[Index];            //starts searching at the start of the index
+		
+		if(head!=null){                         // if the index is not null
+			if(head.student.getMacid().equals(MacId)){          //if the student is the first student in the list, the node points to the next student in the list
+				LinkedList[Index] = LinkedList[Index].next;
+				return true; // returns true since the student was removed
+			}
+			else{                           //searches for the entire list(bucket) and removes the student and returns true
+				for(HashTable.Node p = LinkedList[Index];p.next!=null;p=p.next){
+					if(p.next.student.getMacid().equals(MacId)){
+						p.next = p.next.next;
+						return true;
+					}
+				}
+				return false; //or returns false since the student doesnt exist in the database
+			}
+		}
+		else{
+			return false;           //return false since the student doesnt exist in the database
+		}
+	}
+       
+       public int HashIndex(String key){           //returns the index or bucket for the student to be stored in using the MacId as the key
+            int index;
+            
+            int hash = 0;                             //uses the built in java hashCode() implementation to generate a hash value.                                             
+                                                    
+            for (int i = 0; i < key.length(); i++)
+                    {
+                     hash = 31*hash + key.charAt(i);
+                    }
+            
+            index=hash%size;             //module the size of the array so that its within the array
+            
+            if(index<0){                            // if the index value is negative
+                index = index*(-1);                 // multiply it by -1 to get a positive value of the index
+            }
+            return index;                       //return the index value
+        }
+       
+        
+        
+        
+        public int getSize(){               //returns the size of the table
+            return size;
+            }
+        public int setSize(int NewSize){       //sets the size of the table
+            return size=NewSize;
+            }
+        public void setNumRehash(int rehash){       //sets the number of rehashes that have occured
+            numRehash=rehash;
+            }
+        public HashTable Rehash(){               //method for rehashing the table once the current table is full
+            numRehash++;                               //increments the number of rehashes every time the method is invoked
+            int power=1;                            //generates a value of power of 2 of number of rehashes
+            for (int j=1; j<numRehash;j++){
+                power=power*2;
+                }
+        
+            HashTable temp= new HashTable(this.getSize()*power);            //creates a temperorary hash table using the current size multiplied by 2 to the power of number of rehashes. Increaes the size exponentially to ensure efficiency
+            for (int i=0; i<this.getSize(); i++){         // increments through the entire current table
+                for(HashTable.Node p = this.LinkedList[i];p!=null;p=p.next){         //increments through each bucket
+			if(!(p.student.getMacid().equals(" "))){                //if the student node is not empty 
+                            temp.add(p.student);                                //adds the student in the new temp hash table (now using the new size)
+                        }
+                }
+            }
+            temp.setNumRehash(numRehash);                           //ensures that number of rehashes gets passed on to the new temp table
+            return temp;                //returns the temp table
+        }
+        
+        private class Node{                     //private node class of used to create linked list at each bucket if there are collisions
+		Student student;
+		HashTable.Node next;
+		Node(Student s,HashTable.Node n){
+			student = s;
+			next = n;
+		}
+                
+	}
+}
